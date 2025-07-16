@@ -34,7 +34,7 @@ def get_user_by_username(username):
 #        "INSERT INTO ivrtest.users (username, password) VALUES (%s, %s)",(username, password))        
 #    conn.commit()
 
-def create_user(username):
+def create_user(username, password):
     try:
         conn = psycopg2.connect(Config.DB_URL)
         cursor = conn.cursor()
