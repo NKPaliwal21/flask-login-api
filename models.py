@@ -38,7 +38,7 @@ def create_user(username, password):
     try:
         conn = psycopg2.connect(Config.DB_URL)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO ivrtest.users (username, password) VALUES (%s, %s)",(username, password))
+        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)",(username, password))
         conn.commit()
         conn.close()        
     except Exception as e:
