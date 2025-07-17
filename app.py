@@ -44,3 +44,60 @@ def login():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+@app.route('/stock-entry', methods=['POST'])
+@jwt_required()
+def save_stock_entry():
+    try:
+        data = request.get_json()
+
+        conn = psycopg2.connect(Config.DB_URL)
+        cursor = conn.cursor()
+
+        for entry in data.get('entries', []):
+            cursor.execute("""
+                INSERT INTO stock (username, item, description, unit, qty, rate, value)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                get_jwt_identity(),  # current username
+                entry['item'],
+                entry['desc'],
+                entry['unit'],
+                entry['qty'],
+                entry['rate'],
+                entry['value']
+            ))
+
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "Stock entries saved successfully"}), 200
+
+    except Exception as e:
+        print(f"Error saving stock: {e}")
+        return jsonify({"error": "Failed to save stock entries"}), 500
+
+    @app.route('/stock-report', methods=['GET'])
+    @jwt_required()
+    def get_stock_entries():
+        try:
+            conn = psycopg2.connect(Config.DB_URL)
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                SELECT item, description, unit, qty, rate, value, created_at
+                FROM stock
+                WHERE username = %s
+                ORDER BY created_at DESC
+            """, (get_jwt_identity(),))
+
+            rows = cursor.fetchall()
+            conn.close()
+
+            columns = ['item', 'description', 'unit', 'qty', 'rate', 'value', 'created_at']
+            result = [dict(zip(columns, row)) for row in rows]
+
+            return jsonify(result), 200
+
+        except Exception as e:
+            print(f"Error retrieving stock: {e}")
+            return jsonify({"error": "Failed to retrieve stock report"}), 500
