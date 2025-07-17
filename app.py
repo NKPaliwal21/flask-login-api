@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token, ge
 from models import get_user_by_username, create_user
 from config import Config
 import hashlib
+import psycopg2
 
 app = Flask(__name__)
 app.config.from_object(Config)
