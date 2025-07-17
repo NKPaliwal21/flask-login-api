@@ -51,16 +51,14 @@ if __name__ == '__main__':
 def save_stock_entry():
     try:
         data = request.get_json()
-
         conn = psycopg2.connect(Config.DB_URL)
         cursor = conn.cursor()
-
         for entry in data.get('entries', []):
             cursor.execute("""
                 INSERT INTO stock (username, item, description, unit, qty, rate, value)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                get_jwt_identity(),  # current username
+                get_jwt_identity(),
                 entry['item'],
                 entry['desc'],
                 entry['unit'],
@@ -68,7 +66,6 @@ def save_stock_entry():
                 entry['rate'],
                 entry['value']
             ))
-
         conn.commit()
         conn.close()
         return jsonify({"message": "Stock entries saved successfully"}), 200
@@ -77,28 +74,29 @@ def save_stock_entry():
         print(f"Error saving stock: {e}")
         return jsonify({"error": "Failed to save stock entries"}), 500
 
-    @app.route('/stock-report', methods=['GET'])
-    @jwt_required()
-    def get_stock_entries():
-        try:
-            conn = psycopg2.connect(Config.DB_URL)
-            cursor = conn.cursor()
 
-            cursor.execute("""
-                SELECT item, description, unit, qty, rate, value, created_at
-                FROM stock
-                WHERE username = %s
-                ORDER BY created_at DESC
-            """, (get_jwt_identity(),))
+@app.route('/stock-report', methods=['GET'])  # ✅ Now outside of save_stock_entry
+@jwt_required()
+def get_stock_entries():
+    try:
+        conn = psycopg2.connect(Config.DB_URL)
+        cursor = conn.cursor()
 
-            rows = cursor.fetchall()
-            conn.close()
+        cursor.execute("""
+            SELECT item, description, unit, qty, rate, value, created_at
+            FROM stock
+            WHERE username = %s
+            ORDER BY created_at DESC
+        """, (get_jwt_identity(),))
 
-            columns = ['item', 'description', 'unit', 'qty', 'rate', 'value', 'created_at']
-            result = [dict(zip(columns, row)) for row in rows]
+        rows = cursor.fetchall()
+        conn.close()
 
-            return jsonify(result), 200
+        columns = ['item', 'description', 'unit', 'qty', 'rate', 'value', 'created_at']
+        result = [dict(zip(columns, row)) for row in rows]
 
-        except Exception as e:
-            print(f"Error retrieving stock: {e}")
-            return jsonify({"error": "Failed to retrieve stock report"}), 500
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Error retrieving stock: {e}")
+        return jsonify({"error": "Failed to retrieve stock report"}), 500
