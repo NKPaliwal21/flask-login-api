@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from models import get_user_by_username, create_user
 from config import Config
 import hashlib
