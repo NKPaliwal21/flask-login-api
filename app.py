@@ -50,6 +50,9 @@ if __name__ == '__main__':
 @jwt_required()
 def save_stock_entry():
     try:
+        
+        print("stock-entry-Headers:", dict(request.headers))
+        print("stock-entry-Request JSON:", request.get_json())
         data = request.get_json()
         conn = psycopg2.connect(Config.DB_URL)
         cursor = conn.cursor()
@@ -79,6 +82,10 @@ def save_stock_entry():
 @jwt_required()
 def get_stock_entries():
     try:
+
+        print("stock-report-Headers:", dict(request.headers))
+        print("stock-report-Request JSON:", request.get_json())
+
         conn = psycopg2.connect(Config.DB_URL)
         cursor = conn.cursor()
 
