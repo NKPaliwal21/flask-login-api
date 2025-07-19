@@ -52,10 +52,13 @@ def save_stock_entry():
     try:
         
         print("stock-entry-Headers:", dict(request.headers))
+        print("Received JSON:", request.get_json())
+        
         data = request.get_json()
         conn = psycopg2.connect(Config.DB_URL)
         cursor = conn.cursor()
         for entry in data.get('entries', []):
+            print(f"Saving entry: {entry}")
             cursor.execute("""
                 INSERT INTO stock (username, item, description, unit, qty, rate, value)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
