@@ -60,7 +60,7 @@ def save_stock_entry():
         for entry in data.get('entries', []):
             print(f"Saving entry: {entry}")
             cursor.execute("""
-                INSERT INTO stock (username, item, description, unit, qty, rate, value)
+                INSERT INTO stockitem (username, item, description, unit, qty, rate, value)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
                 get_jwt_identity(),
@@ -92,7 +92,7 @@ def get_stock_entries():
 
         cursor.execute("""
             SELECT item, description, unit, qty, rate, value, created_at
-            FROM stock
+            FROM stockitem
             WHERE username = %s
             ORDER BY created_at DESC
         """, (get_jwt_identity(),))
