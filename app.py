@@ -1,10 +1,15 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response, send_file
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from models import get_user_by_username, create_user
 from config import Config
 import hashlib
 import psycopg2
+import io
+import csv
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -108,3 +113,62 @@ def get_stock_entries():
     except Exception as e:
         print(f"Error retrieving stock: {e}")
         return jsonify({"error": "Failed to retrieve stock report"}), 500
+
+@app.route('/export-csv', methods=['GET'])
+def export_csv():
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    # Replace with actual token validation logic
+    # username = validate_token(token)
+    username = 'testuser'  # placeholder
+
+    cur = conn.cursor()
+    cur.execute("SELECT item, description, unit, qty, rate, value FROM stock WHERE username = %s", (username,))
+    rows = cur.fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Item', 'Description', 'Unit', 'Qty', 'Rate', 'Value'])
+    for row in rows:
+        writer.writerow(row)
+
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=stock_report.csv'
+    response.headers['Content-Type'] = 'text/csv'
+    return response
+
+@app.route('/export-pdf', methods=['GET'])
+def export_pdf():
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    username = 'testuser'  # replace with real logic
+
+    cur = conn.cursor()
+    cur.execute("SELECT item, description, unit, qty, rate, value FROM stock WHERE username = %s", (username,))
+    rows = cur.fetchall()
+
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+
+    y = 750
+    p.drawString(100, y, 'Stock Report')
+    y -= 25
+    p.drawString(50, y, 'Item | Description | Unit | Qty | Rate | Value')
+    y -= 20
+
+    for row in rows:
+        line = ' | '.join(str(col) for col in row)
+        p.drawString(50, y, line)
+        y -= 20
+        if y < 50:
+            p.showPage()
+            y = 750
+
+    p.save()
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment=True, download_name='stock_report.pdf', mimetype='application/pdf')
